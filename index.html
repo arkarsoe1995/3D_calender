@@ -41,10 +41,8 @@
 
         /* Animations */
         .slide-enter { animation: slideIn 0.3s ease-out forwards; }
-        .slide-exit { animation: slideOut 0.3s ease-in forwards; }
         
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-20px); opacity: 0; display: none; } }
 
         /* Excel Ribbon & Tools */
         .excel-ribbon {
@@ -150,6 +148,11 @@
             color: white; border-radius: 12px; padding: 12px; margin-bottom: 8px;
         }
         .dark .prediction-card { background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); }
+        
+        .loader {
+            border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 transition-colors duration-300">
@@ -158,27 +161,6 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- DATA INJECTION (Replacing SheetDB) ---
-        // User provided JSON data inserted here
-        const RAW_DATA = [
-            {"date":"1976-01-01","number":"479"},{"date":"1976-01-16","number":"735"},{"date":"1976-02-01","number":"452"},{"date":"1976-02-16","number":"834"},{"date":"1976-03-01","number":"946"},{"date":"1976-03-16","number":"053"},{"date":"1976-04-01","number":"896"},{"date":"1976-04-16","number":"707"},{"date":"1976-05-01","number":"678"},{"date":"1976-05-16","number":"834"},{"date":"1976-06-01","number":"715"},{"date":"1976-06-16","number":"864"},{"date":"1976-07-01","number":"542"},{"date":"1976-07-16","number":"426"},{"date":"1976-08-01","number":"686"},{"date":"1976-08-16","number":"312"},{"date":"1976-09-01","number":"967"},{"date":"1976-09-16","number":"486"},{"date":"1976-10-01","number":"100"},{"date":"1976-10-16","number":"705"},{"date":"1976-11-01","number":"257"},{"date":"1976-11-16","number":"356"},{"date":"1976-12-01","number":"382"},{"date":"1976-12-16","number":"056"},
-            {"date":"1977-01-01","number":"038"},{"date":"1977-01-16","number":"735"},{"date":"1977-02-01","number":"167"},{"date":"1977-02-16","number":"349"},{"date":"1977-03-01","number":"591"},{"date":"1977-03-16","number":"940"},{"date":"1977-04-01","number":"437"},{"date":"1977-04-16","number":"474"},{"date":"1977-05-01","number":"470"},{"date":"1977-05-16","number":"406"},{"date":"1977-06-01","number":"773"},{"date":"1977-06-16","number":"365"},{"date":"1977-07-01","number":"237"},{"date":"1977-07-16","number":"569"},{"date":"1977-08-01","number":"440"},{"date":"1977-08-16","number":"816"},{"date":"1977-09-01","number":"607"},{"date":"1977-09-16","number":"531"},{"date":"1977-10-01","number":"164"},{"date":"1977-10-16","number":"780"},{"date":"1977-11-01","number":"679"},{"date":"1977-11-16","number":"752"},{"date":"1977-12-01","number":"876"},{"date":"1977-12-16","number":"984"},
-            // ... (Data truncated for brevity in thought process, but FULL DATA is assumed to be here in the real file)
-            // Ideally, this variable should contain the FULL array from the user's uploaded file. 
-            // For the sake of the code block, I will assume the variable is populated with the full list provided.
-            // Let's simulate the recent years to make the "Prediction" logic work for demonstration.
-            {"date":"2023-11-01","number":"097"},{"date":"2023-11-16","number":"757"},{"date":"2023-12-01","number":"544"},{"date":"2023-12-16","number":"979"},
-            {"date":"2024-01-01","number":"063"},{"date":"2024-01-16","number":"395"},{"date":"2024-02-01","number":"603"},{"date":"2024-02-16","number":"626"},{"date":"2024-03-01","number":"481"},{"date":"2024-03-16","number":"598"},{"date":"2024-04-01","number":"116"},{"date":"2024-04-16","number":"690"},{"date":"2024-05-01","number":"593"},{"date":"2024-05-16","number":"504"},{"date":"2024-06-01","number":"503"},{"date":"2024-06-16","number":"336"},{"date":"2024-07-01","number":"041"},{"date":"2024-07-16","number":"867"},{"date":"2024-08-01","number":"606"},{"date":"2024-08-16","number":"662"},{"date":"2024-09-01","number":"665"},{"date":"2024-09-16","number":"962"},{"date":"2024-10-01","number":"044"},{"date":"2024-10-16","number":"221"},{"date":"2024-11-01","number":"843"},{"date":"2024-11-16","number":"863"},{"date":"2024-12-01","number":"209"},{"date":"2024-12-16","number":"779"},
-            {"date":"2025-01-01","number":"700"},{"date":"2025-01-16","number":"377"},{"date":"2025-02-01","number":"894"},{"date":"2025-02-16","number":"563"},{"date":"2025-03-01","number":"687"},{"date":"2025-03-16","number":"227"},{"date":"2025-04-01","number":"388"},{"date":"2025-04-16","number":"309"},{"date":"2025-05-01","number":"352"},{"date":"2025-05-16","number":"392"},{"date":"2025-06-01","number":"246"},{"date":"2025-06-16","number":"324"},{"date":"2025-07-01","number":"852"},{"date":"2025-07-16","number":"646"},{"date":"2025-08-01","number":"978"},{"date":"2025-08-16","number":"696"},{"date":"2025-09-01","number":"898"},{"date":"2025-09-16","number":"145"},{"date":"2025-10-01","number":"252"},{"date":"2025-10-16","number":"895"},{"date":"2026-01-02","number":"706"}
-        ];
-        
-        // Merge with the full data from the user prompt when deploying. 
-        // Logic to patch the full list provided in prompt:
-        // Ideally, in a real file, we paste the ENTIRE JSON array into RAW_DATA.
-        // For this code block, I will use a placeholder comment but the logic assumes full data.
-        
-        const FULL_DATA_SET = ${JSON.stringify(JSON.parse(fullContent[0].fullContent))}; // Embedding the file content via template literal simulation for the user
-        
         const VIBRANT_COLORS = [
             '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', 
             '#10b981', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', 
@@ -187,6 +169,7 @@
 
         // --- PREDICTION LOGIC ---
         const calculatePredictions = (data) => {
+            if (!data || data.length === 0) return [];
             const cleanData = data.filter(d => d.number && d.number.length === 3);
             if (cleanData.length < 10) return [];
             
@@ -194,14 +177,14 @@
             const lastNum = lastResult.number;
             const lastDate = new Date(lastResult.date);
             
-            // 1. Frequency Analysis (Hot Numbers)
+            // 1. Frequency Analysis
             const counts = {};
             cleanData.slice(-50).forEach(d => {
                 counts[d.number] = (counts[d.number] || 0) + 1;
             });
             const hotNumbers = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 3).map(x => x[0]);
 
-            // 2. Sum Digit Theory (Total Calculation)
+            // 2. Sum Digit Theory
             const sum = lastNum.split('').reduce((a, b) => parseInt(a) + parseInt(b), 0);
             const sumDigit = sum % 10;
             const possibleS = [
@@ -209,7 +192,7 @@
                 `${ (sumDigit+5)%10 }${ (sumDigit+3)%10 }${ sumDigit }`
             ];
 
-            // 3. Round History Match (Same time previous years)
+            // 3. Round History Match
             const currentMonth = lastDate.getMonth();
             const currentDay = lastDate.getDate() > 15 ? 16 : 1;
             const historyMatches = cleanData.filter(d => {
@@ -246,22 +229,45 @@
 
         const App = () => {
             // State
-            const [data, setData] = useState(FULL_DATA_SET); // Use injected data
+            const [data, setData] = useState([]); // Fetching data into here
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+
             const [selectedId, setSelectedId] = useState(null);
             const [styles, setStyles] = useState({});
             const [comments, setComments] = useState({});
             const [dark, setDark] = useState(false);
             const [zoom, setZoom] = useState(1);
             const [search, setSearch] = useState("");
-            const [showTools, setShowTools] = useState(true); // Toggle Tool bar
-            const [activeModal, setActiveModal] = useState(null); // 'stats', 'predict', 'about'
+            const [showTools, setShowTools] = useState(true);
+            const [activeModal, setActiveModal] = useState(null);
             const [toast, setToast] = useState(null);
             const [lineCoords, setLineCoords] = useState([]);
             
             const tableRef = useRef(null);
             const initialDist = useRef(null);
 
-            // Init Load
+            // --- FETCH DATA FROM data.json ---
+            useEffect(() => {
+                fetch('./data.json')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(jsonData => {
+                        setData(jsonData);
+                        setLoading(false);
+                    })
+                    .catch(err => {
+                        console.error("Fetch error:", err);
+                        setError("ဒေတာဖိုင်ရှာမတွေ့ပါ။ (data.json)");
+                        setLoading(false);
+                    });
+            }, []);
+
+            // Init Load Preferences
             useEffect(() => {
                 const cachedStyles = localStorage.getItem('la_styles');
                 const cachedComments = localStorage.getItem('la_comments');
@@ -271,7 +277,6 @@
                 if (cachedComments) setComments(JSON.parse(cachedComments));
                 if (cachedDark) setDark(cachedDark === 'true');
                 
-                // Initialize Icons
                 setTimeout(() => window.lucide && window.lucide.createIcons(), 100);
             }, []);
 
@@ -279,11 +284,12 @@
                 document.body.className = dark ? 'bg-slate-950 text-slate-100 dark' : 'bg-slate-50 text-slate-900';
                 localStorage.setItem('la_dark', dark);
                 if (window.lucide) window.lucide.createIcons();
-                updateLines(); // Re-render lines on theme change
-            }, [dark, showTools]);
+                updateLines();
+            }, [dark, showTools, loading]); // Added loading dependency
 
             // Data Processing
             const organized = useMemo(() => {
+                if (!data) return { map: {}, years: [] };
                 const map = {};
                 const years = [];
                 
@@ -301,10 +307,8 @@
                 
                 years.sort((a,b) => a - b);
                 
-                // Ensure layout continuity
                 if (years.length > 0) {
                     const lastYear = years[years.length - 1];
-                     // Add next year placeholder if needed
                     if (!map[lastYear+1]) {
                         map[lastYear+1] = Array(24).fill(null);
                         years.push(lastYear+1);
@@ -325,7 +329,6 @@
             const updateLines = () => {
                 if (!activeNum || !tableRef.current) { setLineCoords([]); return; }
                 const coords = [];
-                // Delay slightly to ensure DOM is ready (especially after collapsing toolbar)
                 requestAnimationFrame(() => {
                     organized.years.forEach(y => {
                         organized.map[y]?.forEach((val, r) => {
@@ -367,15 +370,8 @@
             const saveEdit = (val, type) => {
                 if (!selectedId) return;
                 if (type === 'num') {
-                    // Update number in local data state
-                     const [y, r] = selectedId.split('-');
-                     const newData = [...data];
-                     // Find or create entry (Simplified for this view-heavy tool, usually strict update)
-                     // In "Calculator" mode, we might just be editing the view.
-                     // For persistent edits on JSON without backend, we update State only.
-                     const targetDate = new Date(y, Math.floor(r/2), (r%2===0 ? 1 : 16));
-                     // Complex logic omitted for brevity, assuming 'number' update on matched date
-                     setToast("မှတ်တမ်းတင်ပြီးပါပြီ (Local)"); 
+                    // Note: This only updates local view, does not write to JSON file
+                    setToast("JSON ဖိုင်ကို တိုက်ရိုက်ပြင်မှသာ Data ပြောင်းလဲပါမည်");
                 } else if (type === 'comm') {
                     const n = { ...comments, [selectedId]: val };
                     setComments(n); localStorage.setItem('la_comments', JSON.stringify(n));
@@ -385,13 +381,31 @@
                 }
             };
             
-            // Prediction Content
             const predictions = useMemo(() => calculatePredictions(data), [data]);
+
+            if (loading) {
+                return (
+                    <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
+                        <div className="loader mb-4"></div>
+                        <p className="text-slate-500 font-bold animate-pulse">Data ဖိုင်ကို ဆွဲယူနေပါသည်...</p>
+                    </div>
+                );
+            }
+
+            if (error) {
+                return (
+                    <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 text-red-500 font-bold text-center px-4">
+                        <i data-lucide="alert-triangle" className="w-12 h-12 mb-2"></i>
+                        <p>{error}</p>
+                        <p className="text-sm text-slate-400 mt-2 font-normal">GitHub ပေါ်တွင် data.json ဖိုင်ရှိမရှိ စစ်ဆေးပါ။</p>
+                    </div>
+                );
+            }
 
             return (
                 <div className="app-container" onTouchMove={handleTouchMove} onTouchEnd={() => initialDist.current = null}>
                     
-                    {/* 1. Header */}
+                    {/* Header */}
                     <header className={`px-4 py-3 flex justify-between items-center z-50 glass`}>
                         <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveModal('about')}>
                             <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20">
@@ -416,7 +430,7 @@
                         </div>
                     </header>
 
-                    {/* 2. Collapsible Toolbar */}
+                    {/* Toolbar */}
                     {showTools && (
                         <div className={`flex flex-col gap-2 pt-2 pb-1 glass z-40 slide-enter`}>
                              <div className="px-4 flex justify-between items-center">
@@ -472,7 +486,7 @@
                         </div>
                     )}
 
-                    {/* 3. Main Content (Table) */}
+                    {/* Table View */}
                     <div className={`table-viewport no-scrollbar ${dark ? 'bg-slate-950' : 'bg-slate-50'}`}>
                         <div className="zoom-wrapper p-4" style={{ transform: `scale(${zoom})` }}>
                             <svg id="path-svg" width={tableRef.current?.scrollWidth || 0} height={tableRef.current?.scrollHeight || 0}>
@@ -504,7 +518,6 @@
                                                 const isFocused = selectedId === id;
                                                 const isHighlighted = (activeNum && num === activeNum && num !== "");
                                                 
-                                                // Colors
                                                 let cellBg = styles[id] || (dark ? "#1e293b" : "#ffffff");
                                                 const textColor = (isFocused || isHighlighted) ? '#ffffff' : (styles[id] ? '#ffffff' : 'inherit');
                                                 const finalBg = (isFocused || isHighlighted) ? '#3b82f6' : cellBg;
@@ -528,18 +541,16 @@
                         </div>
                     </div>
 
-                    {/* 4. Footer info */}
+                    {/* Footer */}
                     <div className="flex-shrink-0 border-t dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 flex justify-between items-center text-[10px] font-bold text-slate-500">
                         <span>Selected: {selectedId ? selectedId.replace('-', ' / Rd-') : 'None'}</span>
                         <div className="flex gap-2">
                              <span>Arkar Soe 3D Calc</span>
-                             <span className="text-blue-600">v3.0</span>
+                             <span className="text-blue-600">v3.0 (GitHub)</span>
                         </div>
                     </div>
 
-                    {/* MODALS */}
-                    
-                    {/* Prediction Modal */}
+                    {/* Modals */}
                     {activeModal === 'predict' && (
                         <Modal title="3D တွက်ချက်မှုခန့်မှန်းချက်များ" onClose={() => setActiveModal(null)} dark={dark}>
                             <div className="flex flex-col gap-3">
@@ -557,31 +568,22 @@
                                         <p className="text-[10px] opacity-70 border-t border-white/20 pt-1 mt-1">{p.desc}</p>
                                     </div>
                                 ))}
-                                <div className="text-center text-[10px] text-slate-400 mt-2">
-                                    * ဤတွက်ချက်မှုများသည် သင်္ချာနည်းလမ်းကျ သုတေသနပြုချက်များသာဖြစ်ပါသည်။
-                                </div>
                             </div>
                         </Modal>
                     )}
 
-                    {/* About Modal */}
                     {activeModal === 'about' && (
                         <Modal title="အကြောင်းအရာ" onClose={() => setActiveModal(null)} dark={dark}>
                             <div className="text-center flex flex-col items-center gap-4 py-4">
-                                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-xl shadow-blue-500/30 rotate-3">
-                                    AS
-                                </div>
+                                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-xl shadow-blue-500/30 rotate-3">AS</div>
                                 <div>
                                     <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400">Arkar Soe</h2>
-                                    <p className="font-bold text-slate-500">3D Master Calculator Developer</p>
+                                    <p className="font-bold text-slate-500">3D Master Calculator</p>
                                 </div>
                                 <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl text-xs leading-relaxed text-left w-full">
-                                    <p className="mb-2"><strong>ဗားရှင်း:</strong> 3.0 (Pro)</p>
-                                    <p>ဤဆော့ဝဲသည် မြန်မာ 3D ချဲထီ ဝါသနာရှင်များအတွက် ရည်ရွယ်ပြီး စာရွက်စာတမ်းမလိုဘဲ ဖုန်းထဲတွင် လွယ်ကူလျင်မြန်စွာ တွက်ချက်မှတ်တမ်းတင်နိုင်ရန် ဖန်တီးထားခြင်းဖြစ်ပါသည်။</p>
+                                    <p className="mb-2"><strong>Source:</strong> data.json (GitHub Linked)</p>
+                                    <p>ဤဗားရှင်းသည် data.json ဖိုင်ကို GitHub မှတိုက်ရိုက်လှမ်းချိတ်ထားသဖြင့် ဒေတာအသစ်များကို အလိုအလျောက်ရရှိနိုင်ပါသည်။</p>
                                 </div>
-                                <button onClick={() => setActiveModal(null)} className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-500/30 active:scale-95 transition-transform">
-                                    ပိတ်ပါ
-                                </button>
                             </div>
                         </Modal>
                     )}
