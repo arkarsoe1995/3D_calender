@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Master Calculator (Arkar Soe)</title>
+    <title>အာကာစိုး (Pro Version)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -24,12 +24,10 @@
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(0,0,0,0.05);
         }
 
         .dark .glass {
-            background: rgba(15, 23, 42, 0.95);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: rgba(15, 23, 42, 0.9);
         }
 
         .app-container {
@@ -39,120 +37,250 @@
             overflow: hidden;
         }
 
-        /* Animations */
-        .slide-enter { animation: slideIn 0.3s ease-out forwards; }
+        /* Toolbar Transition */
+        .toolbar-container {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            opacity: 1;
+            max-height: 200px; /* Adjust based on content */
+        }
         
-        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toolbar-container.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin: 0;
+        }
 
-        /* Excel Ribbon & Tools */
+        /* Excel Style Ribbon Menu */
         .excel-ribbon {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 4px 8px;
             display: flex;
             align-items: center;
             gap: 10px;
+            z-index: 90;
             overflow-x: auto;
-            padding: 8px;
+            flex-shrink: 0;
+            transition: all 0.3s;
         }
+
+        .dark .excel-ribbon { border-color: #334155; }
 
         .ribbon-group {
             display: flex;
             align-items: center;
             gap: 6px;
             padding: 2px 8px;
-            border-right: 1px solid #e2e8f0;
+            border-right: 1px solid #f1f5f9;
         }
-        .dark .ribbon-group { border-color: #334155; }
-        .ribbon-group:last-child { border: none; }
+
+        .dark .ribbon-group { border-color: #1e293b; }
 
         .ribbon-input {
-            width: 60px; height: 36px;
-            border-radius: 8px; border: 1px solid #cbd5e1;
-            text-align: center; font-weight: bold; font-size: 18px; outline: none;
+            width: 50px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.2s;
         }
-        .dark .ribbon-input { background: #1e293b; border-color: #475569; color: white; }
-        .ribbon-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+        .ribbon-input:focus { border-color: #3b82f6; ring: 2px solid #bfdbfe; }
 
-        .color-mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .dark .ribbon-input { background: #1e293b; border-color: #475569; color: white; }
+
+        .ribbon-comm {
+            width: 100px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            padding: 0 8px;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .dark .ribbon-comm { background: #1e293b; border-color: #475569; color: white; }
+
+        .color-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+        }
+
         .mini-color-btn {
-            width: 20px; height: 20px; border-radius: 4px;
-            border: 1px solid rgba(0,0,0,0.1); cursor: pointer;
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 1px solid rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.1s;
         }
         .mini-color-btn:active { transform: scale(0.9); }
 
-        /* Main Table */
+        /* Independent Table Zooming Container */
         .table-viewport {
-            position: relative; flex: 1; overflow: auto;
-            background: inherit; touch-action: pan-x pan-y;
+            position: relative;
+            flex: 1;
+            overflow: auto;
+            background: inherit;
+            touch-action: pan-x pan-y;
         }
-        .zoom-wrapper { transform-origin: 0 0; width: max-content; }
 
+        .zoom-wrapper {
+            transform-origin: 0 0;
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            width: max-content;
+        }
+
+        /* Table Styles */
         th, td {
-            min-width: 54px; height: 44px; text-align: center; font-size: 14px; position: relative;
+            min-width: 54px; 
+            height: 44px;     
+            text-align: center;
+            font-size: 14px;
+            position: relative;
         }
 
         .cell-box {
-            position: absolute; inset: 2px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 6px; transition: all 0.2s;
+            position: absolute;
+            inset: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
             box-shadow: 1px 1px 2px rgba(0,0,0,0.05);
             border: 1px solid transparent;
         }
 
-        .cell-box.selected {
-            border: 2px solid #3b82f6; z-index: 40;
-            transform: scale(1.1); box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        .cell-box.highlight-pulse {
+            animation: pulse-ring 2s infinite;
         }
-        .dark .cell-box { background-color: #1e293b; border-color: #334155; box-shadow: none; }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        .cell-box.selected {
+            border: 2px solid #3b82f6;
+            z-index: 40;
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .cell-box {
+            box-shadow: none;
+            background-color: #1e293b;
+            border-color: #334155;
+        }
+
+        table { border-collapse: separate; border-spacing: 0; width: max-content; }
 
         thead th {
-            position: sticky; top: 0; z-index: 50;
-            background-color: inherit; border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: inherit;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 800 !important;
             backdrop-filter: blur(4px);
         }
-        .sticky-col {
-            position: sticky; left: 0; z-index: 45;
-            background-color: inherit !important;
-            width: 45px !important; border-right: 1px solid #e2e8f0;
-        }
-        .dark thead th, .dark .sticky-col { border-color: #334155; }
-        .sticky-corner { position: sticky; top: 0; left: 0; z-index: 60; background-color: inherit !important; }
 
-        /* SVG & Lines */
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 45;
+            background-color: inherit !important;
+            width: 45px !important;
+            min-width: 45px !important;
+            border-right: 1px solid #e2e8f0;
+            font-weight: 800 !important;
+        }
+
+        .dark thead th, .dark .sticky-col { border-color: #334155; }
+
+        .sticky-corner {
+            position: sticky;
+            top: 0;
+            left: 0;
+            z-index: 60;
+            background-color: inherit !important;
+        }
+
         #path-svg {
-            position: absolute; top: 0; left: 0; pointer-events: none; z-index: 30;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 30;
+            overflow: visible;
             filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.1));
         }
+
         .connection-line {
-            fill: none; stroke: #f59e0b; stroke-width: 2.5;
-            stroke-dasharray: 6; animation: dash 30s linear infinite;
-            opacity: 0.8; stroke-linecap: round; stroke-linejoin: round;
+            fill: none;
+            stroke: #f59e0b;
+            stroke-width: 2.5;
+            stroke-dasharray: 6;
+            animation: dash 30s linear infinite;
+            opacity: 0.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
+
         @keyframes dash { to { stroke-dashoffset: -1000; } }
 
-        /* Modals */
+        .comment-dot {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            width: 6px;
+            height: 6px;
+            background: #ef4444;
+            border-radius: 50%;
+            box-shadow: 0 0 0 1px white;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(37, 99, 235, 0.1);
+            border-left-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Modal & Toast */
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
             z-index: 200; display: flex; align-items: center; justify-content: center;
-            padding: 20px; backdrop-filter: blur(5px);
+            padding: 20px;
+            backdrop-filter: blur(4px);
         }
         .modal-content {
-            background: white; border-radius: 20px; padding: 24px;
-            width: 100%; max-width: 360px; max-height: 85vh; overflow-y: auto;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            background: white; border-radius: 16px; padding: 20px;
+            width: 100%; max-width: 320px; max-height: 80vh; overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
-        .dark .modal-content { background: #0f172a; border: 1px solid #1e293b; color: white; }
+        .dark .modal-content { background: #0f172a; border: 1px solid #1e293b; }
 
-        /* Utilities */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .prediction-card {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white; border-radius: 12px; padding: 12px; margin-bottom: 8px;
+        .toast {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+            background: #10b981; color: white; padding: 8px 16px; border-radius: 20px;
+            font-size: 12px; font-weight: bold; z-index: 200;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.3s ease-out;
         }
-        .dark .prediction-card { background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); }
-        
-        .loader {
-            border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes slideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 transition-colors duration-300">
@@ -160,6 +288,9 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
+        
+        // --- UPDATED: Use Local JSON instead of SheetDB ---
+        const DATA_URL = 'data.json'; 
 
         const VIBRANT_COLORS = [
             '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', 
@@ -167,196 +298,146 @@
             '#a855f7', '#d946ef'
         ];
 
-        // --- PREDICTION LOGIC ---
-        const calculatePredictions = (data) => {
-            if (!data || data.length === 0) return [];
-            const cleanData = data.filter(d => d.number && d.number.length === 3);
-            if (cleanData.length < 10) return [];
-            
-            const lastResult = cleanData[cleanData.length - 1];
-            const lastNum = lastResult.number;
-            const lastDate = new Date(lastResult.date);
-            
-            // 1. Frequency Analysis
-            const counts = {};
-            cleanData.slice(-50).forEach(d => {
-                counts[d.number] = (counts[d.number] || 0) + 1;
-            });
-            const hotNumbers = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 3).map(x => x[0]);
-
-            // 2. Sum Digit Theory
-            const sum = lastNum.split('').reduce((a, b) => parseInt(a) + parseInt(b), 0);
-            const sumDigit = sum % 10;
-            const possibleS = [
-                `${sumDigit}${ (sumDigit+1)%10 }${ (sumDigit+2)%10 }`,
-                `${ (sumDigit+5)%10 }${ (sumDigit+3)%10 }${ sumDigit }`
-            ];
-
-            // 3. Round History Match
-            const currentMonth = lastDate.getMonth();
-            const currentDay = lastDate.getDate() > 15 ? 16 : 1;
-            const historyMatches = cleanData.filter(d => {
-                const dt = new Date(d.date);
-                return dt.getMonth() === currentMonth && (dt.getDate() > 15 ? 16 : 1) === currentDay;
-            }).slice(-3).map(d => d.number);
-
-            return [
-                { title: "Hot Frequency (Last 50 Rounds)", nums: hotNumbers, desc: "အထွက်အများဆုံးဂဏန်းများ" },
-                { title: "Sum Digit Formula", nums: possibleS, desc: "ပေါင်းခြင်းသီအိုရီအရ" },
-                { title: "History Repeat", nums: historyMatches, desc: "ယခင်နှစ် ဒီအချိန်ထွက်ခဲ့သည့်ဂဏန်းများ" }
-            ];
+        const getContrastYIQ = (hexcolor) => {
+            if (!hexcolor) return 'inherit';
+            hexcolor = hexcolor.replace("#", "");
+            if (hexcolor.length === 3) hexcolor = hexcolor.split('').map(c => c+c).join('');
+            const r = parseInt(hexcolor.substr(0, 2), 16);
+            const g = parseInt(hexcolor.substr(2, 2), 16);
+            const b = parseInt(hexcolor.substr(4, 2), 16);
+            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return (yiq >= 128) ? '#000000' : '#ffffff';
         };
 
         const Toast = ({ msg }) => (
-            <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white px-4 py-2 rounded-full shadow-lg z-[200] flex items-center gap-2 text-sm font-bold animate-bounce">
+            <div className="toast flex items-center gap-2">
                 <i data-lucide="check-circle" className="w-4 h-4"></i> {msg}
             </div>
         );
 
-        const Modal = ({ title, children, onClose, dark }) => (
-            <div className="modal-overlay" onClick={onClose}>
-                <div className="modal-content no-scrollbar" onClick={e => e.stopPropagation()}>
-                    <div className="flex justify-between items-center mb-4 pb-2 border-b dark:border-slate-700">
-                        <h3 className="font-bold text-lg">{title}</h3>
-                        <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
-                            <i data-lucide="x" className="w-5 h-5"></i>
-                        </button>
+        const StatsModal = ({ data, onClose, dark }) => {
+            const stats = useMemo(() => {
+                const counts = {};
+                data.forEach(item => {
+                    if (item.number) {
+                        counts[item.number] = (counts[item.number] || 0) + 1;
+                    }
+                });
+                return Object.entries(counts)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 20); // Top 20
+            }, [data]);
+
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal-content no-scrollbar" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className={`font-bold text-lg ${dark ? 'text-white' : 'text-slate-800'}`}>အထွက်အများဆုံးများ</h3>
+                            <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+                                <i data-lucide="x" className="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                            {stats.map(([num, count], i) => (
+                                <div key={num} className={`p-2 rounded-lg text-center border ${i < 3 ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800' : 'bg-slate-50 border-slate-100 dark:bg-slate-800 dark:border-slate-700'}`}>
+                                    <div className="text-xl font-black text-blue-600 dark:text-blue-400">{num}</div>
+                                    <div className="text-[10px] opacity-60 font-bold">{count} ကြိမ်</div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    {children}
                 </div>
-            </div>
-        );
+            );
+        };
 
         const App = () => {
-            // State
-            const [data, setData] = useState([]); // Fetching data into here
+            const [data, setData] = useState([]);
             const [loading, setLoading] = useState(true);
-            const [error, setError] = useState(null);
-
             const [selectedId, setSelectedId] = useState(null);
             const [styles, setStyles] = useState({});
             const [comments, setComments] = useState({});
-            const [dark, setDark] = useState(false);
-            const [zoom, setZoom] = useState(1);
             const [search, setSearch] = useState("");
-            const [showTools, setShowTools] = useState(true);
-            const [activeModal, setActiveModal] = useState(null);
-            const [toast, setToast] = useState(null);
+            const [dark, setDark] = useState(false);
             const [lineCoords, setLineCoords] = useState([]);
+            const [zoom, setZoom] = useState(1);
+            const [showStats, setShowStats] = useState(false);
+            const [toast, setToast] = useState(null);
+            
+            // --- NEW: Toolbar Visibility State ---
+            const [isToolbarVisible, setIsToolbarVisible] = useState(true);
             
             const tableRef = useRef(null);
             const initialDist = useRef(null);
 
-            // --- FETCH DATA FROM data.json ---
+            // Fetch Data from JSON File
             useEffect(() => {
-                fetch('./data.json')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! Status: ${response.status}`);
+                const load = async () => {
+                    const cached = localStorage.getItem('la_data_v2');
+                    if (cached) setData(JSON.parse(cached));
+                    setStyles(JSON.parse(localStorage.getItem('la_styles') || '{}'));
+                    setComments(JSON.parse(localStorage.getItem('la_comments') || '{}'));
+                    setDark(localStorage.getItem('la_dark') === 'true');
+
+                    try {
+                        const res = await fetch(DATA_URL);
+                        if (!res.ok) throw new Error("JSON file not found");
+                        const json = await res.json();
+                        if (Array.isArray(json)) {
+                            setData(json);
+                            localStorage.setItem('la_data_v2', JSON.stringify(json));
                         }
-                        return response.json();
-                    })
-                    .then(jsonData => {
-                        setData(jsonData);
-                        setLoading(false);
-                    })
-                    .catch(err => {
-                        console.error("Fetch error:", err);
-                        setError("ဒေတာဖိုင်ရှာမတွေ့ပါ။ (data.json)");
-                        setLoading(false);
-                    });
+                    } catch (e) { 
+                        console.error(e); 
+                        if (!cached) setToast("data.json မရှိပါ သို့မဟုတ် Error ဖြစ်နေပါသည်");
+                    } finally { setLoading(false); }
+                };
+                load();
             }, []);
 
-            // Init Load Preferences
-            useEffect(() => {
-                const cachedStyles = localStorage.getItem('la_styles');
-                const cachedComments = localStorage.getItem('la_comments');
-                const cachedDark = localStorage.getItem('la_dark');
-                
-                if (cachedStyles) setStyles(JSON.parse(cachedStyles));
-                if (cachedComments) setComments(JSON.parse(cachedComments));
-                if (cachedDark) setDark(cachedDark === 'true');
-                
-                setTimeout(() => window.lucide && window.lucide.createIcons(), 100);
-            }, []);
-
-            useEffect(() => {
-                document.body.className = dark ? 'bg-slate-950 text-slate-100 dark' : 'bg-slate-50 text-slate-900';
-                localStorage.setItem('la_dark', dark);
-                if (window.lucide) window.lucide.createIcons();
-                updateLines();
-            }, [dark, showTools, loading]); // Added loading dependency
-
-            // Data Processing
+            // Organize Data
             const organized = useMemo(() => {
-                if (!data) return { map: {}, years: [] };
                 const map = {};
-                const years = [];
-                
                 data.forEach(item => {
                     const d = new Date(item.date);
                     if (isNaN(d.getTime())) return;
                     const y = d.getFullYear();
-                    if (!map[y]) {
-                        map[y] = Array(24).fill(null);
-                        years.push(y);
-                    }
+                    if (!map[y]) map[y] = Array(24).fill(null);
                     const idx = d.getMonth() * 2 + (d.getDate() >= 16 ? 1 : 0);
                     if (idx < 24) map[y][idx] = String(item.number || "");
                 });
-                
-                years.sort((a,b) => a - b);
-                
-                if (years.length > 0) {
-                    const lastYear = years[years.length - 1];
-                    if (!map[lastYear+1]) {
-                        map[lastYear+1] = Array(24).fill(null);
-                        years.push(lastYear+1);
-                    }
-                }
-                
+                let years = Object.keys(map).sort((a, b) => Number(a) - Number(b)).map(Number);
+                if (years.length === 0) years = [new Date().getFullYear()];
+                const next = years[years.length - 1] + 1;
+                if (!map[next]) map[next] = Array(24).fill(null);
+                years.push(next);
                 return { map, years };
             }, [data]);
 
-            // Active Number & Path Logic
             const activeNum = useMemo(() => {
                 if (search) return search;
                 if (!selectedId) return null;
                 const [y, r] = selectedId.split('-');
                 return organized.map[y]?.[r];
-            }, [selectedId, search, organized]);
+            }, [selectedId, organized, search]);
 
-            const updateLines = () => {
-                if (!activeNum || !tableRef.current) { setLineCoords([]); return; }
-                const coords = [];
-                requestAnimationFrame(() => {
-                    organized.years.forEach(y => {
-                        organized.map[y]?.forEach((val, r) => {
-                            if (val === activeNum) {
-                                const cell = tableRef.current.querySelector(`[data-id="${y}-${r}"]`);
-                                if (cell) {
-                                    coords.push({
-                                        x: cell.offsetLeft + cell.offsetWidth / 2,
-                                        y: cell.offsetTop + cell.offsetHeight / 2
-                                    });
-                                }
-                            }
-                        });
+            const pathSummary = useMemo(() => {
+                if (!activeNum) return null;
+                const matches = [];
+                organized.years.forEach(y => {
+                    organized.map[y]?.forEach((val, r) => {
+                        if (val === activeNum) matches.push({ year: y, round: r + 1 });
                     });
-                    setLineCoords(coords);
                 });
-            };
+                return matches;
+            }, [activeNum, organized]);
 
-            useEffect(() => {
-                updateLines();
-                window.addEventListener('resize', updateLines);
-                return () => window.removeEventListener('resize', updateLines);
-            }, [activeNum, zoom, showTools]);
-
-            // Interactions
+            // Custom Zoom Handler
             const handleTouchMove = (e) => {
                 if (e.touches.length === 2) {
-                    const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                    const dist = Math.hypot(
+                        e.touches[0].pageX - e.touches[1].pageX,
+                        e.touches[0].pageY - e.touches[1].pageY
+                    );
                     if (initialDist.current == null) {
                         initialDist.current = dist;
                     } else {
@@ -367,126 +448,169 @@
                 }
             };
 
-            const saveEdit = (val, type) => {
-                if (!selectedId) return;
-                if (type === 'num') {
-                    // Note: This only updates local view, does not write to JSON file
-                    setToast("JSON ဖိုင်ကို တိုက်ရိုက်ပြင်မှသာ Data ပြောင်းလဲပါမည်");
-                } else if (type === 'comm') {
-                    const n = { ...comments, [selectedId]: val };
-                    setComments(n); localStorage.setItem('la_comments', JSON.stringify(n));
-                } else if (type === 'style') {
-                    const n = { ...styles, [selectedId]: val };
-                    setStyles(n); localStorage.setItem('la_styles', JSON.stringify(n));
-                }
+            const handleTouchEnd = () => { initialDist.current = null; };
+
+            const updateLines = () => {
+                if (!activeNum || !tableRef.current) { setLineCoords([]); return; }
+                const coords = [];
+                organized.years.forEach(y => {
+                    organized.map[y]?.forEach((val, r) => {
+                        if (val === activeNum) {
+                            const cell = tableRef.current.querySelector(`[data-id="${y}-${r}"]`);
+                            if (cell) {
+                                coords.push({
+                                    x: cell.offsetLeft + cell.offsetWidth / 2,
+                                    y: cell.offsetTop + cell.offsetHeight / 2
+                                });
+                            }
+                        }
+                    });
+                });
+                setLineCoords(coords);
             };
-            
-            const predictions = useMemo(() => calculatePredictions(data), [data]);
 
-            if (loading) {
-                return (
-                    <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
-                        <div className="loader mb-4"></div>
-                        <p className="text-slate-500 font-bold animate-pulse">Data ဖိုင်ကို ဆွဲယူနေပါသည်...</p>
-                    </div>
-                );
-            }
+            useEffect(() => {
+                updateLines();
+                window.addEventListener('resize', updateLines);
+                return () => window.removeEventListener('resize', updateLines);
+            }, [activeNum, organized, zoom, isToolbarVisible]); // Added isToolbarVisible dependency
 
-            if (error) {
+            useEffect(() => {
+                document.body.className = dark ? 'bg-slate-950 text-slate-100 dark' : 'bg-slate-50 text-slate-900';
+                localStorage.setItem('la_dark', dark);
+                if (window.lucide) window.lucide.createIcons();
+            }, [dark, selectedId, activeNum, loading, showStats, toast, isToolbarVisible]);
+
+            const saveQuickEdit = (id, num, comm, color) => {
+                if (!id) return;
+                const [y, r] = id.split('-');
+                const newComms = { ...comments, [id]: comm };
+                const newStyles = { ...styles, [id]: color };
+                setComments(newComms);
+                setStyles(newStyles);
+                localStorage.setItem('la_comments', JSON.stringify(newComms));
+                localStorage.setItem('la_styles', JSON.stringify(newStyles));
+                
+                const newData = [...data];
+                const dateStr = `${y}-${String(Math.floor(r/2)+1).padStart(2,'0')}-${Number(r)%2===0?'01':'16'}`;
+                const idx = newData.findIndex(d => d.date === dateStr);
+                if (idx > -1) newData[idx].number = num;
+                else newData.push({ date: dateStr, number: num });
+                setData(newData);
+                localStorage.setItem('la_data_v2', JSON.stringify(newData));
+                
+                setToast("သိမ်းဆည်းပြီးပါပြီ");
+                setTimeout(() => setToast(null), 2000);
+            };
+
+            if (loading && data.length === 0) {
                 return (
-                    <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 text-red-500 font-bold text-center px-4">
-                        <i data-lucide="alert-triangle" className="w-12 h-12 mb-2"></i>
-                        <p>{error}</p>
-                        <p className="text-sm text-slate-400 mt-2 font-normal">GitHub ပေါ်တွင် data.json ဖိုင်ရှိမရှိ စစ်ဆေးပါ။</p>
+                    <div className="app-container flex items-center justify-center">
+                        <div className="flex flex-col items-center">
+                            <div className="spinner mb-4"></div>
+                            <p className="text-sm font-bold text-blue-600">ဒေတာရယူနေပါသည်...</p>
+                        </div>
                     </div>
                 );
             }
 
             return (
-                <div className="app-container" onTouchMove={handleTouchMove} onTouchEnd={() => initialDist.current = null}>
-                    
+                <div className="app-container" onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
                     {/* Header */}
-                    <header className={`px-4 py-3 flex justify-between items-center z-50 glass`}>
-                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveModal('about')}>
-                            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20">
-                                3D
+                    <div className={`px-4 py-3 flex justify-between items-center flex-shrink-0 glass z-50 border-b ${dark ? 'border-slate-800' : 'border-slate-200'}`}>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/30">
+                                KS
                             </div>
-                            <div className="flex flex-col">
-                                <h1 className="text-lg font-black leading-none tracking-tight">Master Calc</h1>
-                                <span className="text-[10px] text-slate-500 font-bold mt-0.5">By Arkar Soe</span>
+                            <div>
+                                <h1 className="text-base font-black leading-none">အာကာစိုး</h1>
+                                <span className="text-[10px] text-slate-500 font-bold">Smart Record</span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                             <button onClick={() => setActiveModal('predict')} className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 text-white text-xs font-bold shadow-sm active:scale-95 transition-transform">
-                                <i data-lucide="sparkles" className="w-3.5 h-3.5"></i>
-                                <span>တွက်ချက်ရန်</span>
+                        <div className="flex gap-2">
+                             {/* --- NEW: Show/Hide Toggle Button --- */}
+                             <button onClick={() => setIsToolbarVisible(!isToolbarVisible)} className={`p-2 rounded-lg transition-colors ${isToolbarVisible ? 'bg-blue-100 text-blue-600 dark:bg-blue-900' : 'bg-slate-100 dark:bg-slate-800'}`}>
+                                <i data-lucide={isToolbarVisible ? "panel-top-close" : "panel-top-open"} className="w-5 h-5"></i>
                             </button>
-                            <button onClick={() => setDark(!dark)} className="p-2 rounded-full bg-slate-100 dark:bg-slate-800">
-                                <i data-lucide={dark ? "sun" : "moon"} className="w-5 h-5 text-slate-600 dark:text-slate-300"></i>
+
+                            <button onClick={() => setShowStats(true)} className="p-2 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                                <i data-lucide="bar-chart-2" className="w-5 h-5"></i>
                             </button>
-                             <button onClick={() => setShowTools(!showTools)} className={`p-2 rounded-full transition-colors ${showTools ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                                <i data-lucide={showTools ? "chevron-up" : "chevron-down"} className="w-5 h-5"></i>
+                            <button onClick={() => setDark(!dark)} className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 transition-colors">
+                                <i data-lucide={dark ? "sun" : "moon"} className="w-5 h-5"></i>
                             </button>
                         </div>
-                    </header>
+                    </div>
 
-                    {/* Toolbar */}
-                    {showTools && (
-                        <div className={`flex flex-col gap-2 pt-2 pb-1 glass z-40 slide-enter`}>
-                             <div className="px-4 flex justify-between items-center">
-                                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border shadow-sm w-full max-w-[220px] ${dark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-                                    <i data-lucide="search" className="w-4 h-4 text-slate-400"></i>
-                                    <input 
-                                        type="number" placeholder="နံပါတ်ရှာရန်..." 
-                                        className="bg-transparent outline-none w-full font-bold text-sm"
-                                        value={search} onChange={e => setSearch(e.target.value)}
-                                    />
-                                    {search && <button onClick={() => setSearch("")}><i data-lucide="x-circle" className="w-4 h-4 text-slate-400"></i></button>}
-                                </div>
-                                <div className="flex gap-1">
-                                    <button onClick={() => setZoom(1)} className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800"><i data-lucide="refresh-ccw" className="w-4 h-4"></i></button>
-                                    <button onClick={() => setZoom(prev => Math.min(2.5, prev + 0.2))} className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800"><i data-lucide="zoom-in" className="w-4 h-4"></i></button>
-                                </div>
+                    {/* Controls & Ribbon (Collapsible) */}
+                    <div className={`toolbar-container glass ${dark ? 'bg-slate-900/50' : 'bg-white/50'} ${isToolbarVisible ? '' : 'collapsed'}`}>
+                         <div className="px-4 pt-2 flex justify-between items-center">
+                             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm w-full max-w-[200px] ${dark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                                <i data-lucide="search" className="w-4 h-4 text-slate-400"></i>
+                                <input 
+                                    type="number" placeholder="ဂဏန်းရှာရန်..." 
+                                    className="bg-transparent outline-none w-full font-bold text-sm"
+                                    value={search} onChange={e => setSearch(e.target.value)}
+                                />
+                                {search && <button onClick={() => setSearch("")}><i data-lucide="x-circle" className="w-4 h-4 text-slate-400"></i></button>}
                             </div>
+                            <div className="flex gap-1">
+                                <button onClick={() => setZoom(1)} className="p-1.5 rounded bg-slate-100 dark:bg-slate-800 text-xs font-bold">Reset</button>
+                                <button onClick={() => setZoom(prev => Math.min(2.5, prev + 0.1))} className="p-1.5 rounded bg-slate-100 dark:bg-slate-800"><i data-lucide="plus" className="w-4 h-4"></i></button>
+                            </div>
+                        </div>
 
-                            <div className="excel-ribbon no-scrollbar">
-                                <div className="ribbon-group">
-                                    <span className="text-[10px] font-bold text-slate-400 block mb-1">ဂဏန်း</span>
-                                    <input 
-                                        className="ribbon-input" 
-                                        value={selectedId ? (organized.map[selectedId.split('-')[0]]?.[selectedId.split('-')[1]] || "") : ""}
-                                        disabled={true} 
-                                    />
-                                </div>
-                                <div className="ribbon-group">
-                                    <span className="text-[10px] font-bold text-slate-400 block mb-1">မှတ်ချက်</span>
-                                    <input 
-                                        className="ribbon-input !w-[120px] !text-sm !font-normal !text-left px-2" placeholder="Note..."
-                                        value={selectedId ? (comments[selectedId] || "") : ""}
-                                        onChange={(e) => saveEdit(e.target.value, 'comm')}
-                                        disabled={!selectedId}
-                                    />
-                                </div>
-                                <div className="ribbon-group !border-none">
-                                    <span className="text-[10px] font-bold text-slate-400 block mb-1">အရောင်</span>
-                                    <div className="color-mini-grid">
-                                        {VIBRANT_COLORS.map(c => (
-                                            <button 
-                                                key={c} onClick={() => saveEdit(c, 'style')}
-                                                className="mini-color-btn shadow-sm" style={{ background: c }} disabled={!selectedId}
-                                            ></button>
-                                        ))}
+                        <div className="excel-ribbon no-scrollbar mt-1">
+                            <div className="ribbon-group">
+                                <input 
+                                    className="ribbon-input" placeholder="--"
+                                    value={selectedId ? (organized.map[selectedId.split('-')[0]]?.[selectedId.split('-')[1]] || "") : ""}
+                                    onChange={(e) => saveQuickEdit(selectedId, e.target.value, comments[selectedId] || "", styles[selectedId] || "")}
+                                    disabled={!selectedId}
+                                />
+                            </div>
+                            <div className="ribbon-group">
+                                <input 
+                                    className="ribbon-comm" placeholder="မှတ်ချက်..."
+                                    value={selectedId ? (comments[selectedId] || "") : ""}
+                                    onChange={(e) => saveQuickEdit(selectedId, organized.map[selectedId.split('-')[0]]?.[selectedId.split('-')[1]] || "", e.target.value, styles[selectedId] || "")}
+                                    disabled={!selectedId}
+                                />
+                            </div>
+                            <div className="ribbon-group !border-none">
+                                <div className="color-mini-grid">
+                                    {VIBRANT_COLORS.map(c => (
                                         <button 
-                                            onClick={() => saveEdit("", 'style')}
-                                            className={`mini-color-btn flex items-center justify-center border ${dark ? 'bg-slate-700' : 'bg-slate-50'}`} disabled={!selectedId}
-                                        ><i data-lucide="x" className="w-3 h-3 opacity-50"></i></button>
-                                    </div>
+                                            key={c} onClick={() => saveQuickEdit(selectedId, organized.map[selectedId.split('-')[0]]?.[selectedId.split('-')[1]] || "", comments[selectedId] || "", c)}
+                                            className="mini-color-btn shadow-sm" style={{ background: c }} disabled={!selectedId}
+                                        ></button>
+                                    ))}
+                                    <button 
+                                        onClick={() => saveQuickEdit(selectedId, organized.map[selectedId.split('-')[0]]?.[selectedId.split('-')[1]] || "", comments[selectedId] || "", "")}
+                                        className={`mini-color-btn flex items-center justify-center border ${dark ? 'bg-slate-700 border-slate-600' : 'bg-slate-50 border-slate-300'}`} disabled={!selectedId}
+                                    ><i data-lucide="eraser" className="w-2.5 h-2.5 opacity-50"></i></button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Path Summary Chips */}
+                    {activeNum && pathSummary && pathSummary.length > 0 && (
+                        <div className={`px-4 py-2 flex items-center gap-3 overflow-x-auto no-scrollbar flex-shrink-0 border-b ${dark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                            <div className="text-xl font-black text-amber-500 drop-shadow-sm flex-shrink-0">{activeNum}</div>
+                            <div className="h-6 w-[1px] bg-slate-300 dark:bg-slate-700"></div>
+                            <div className="flex gap-1.5">
+                                {pathSummary.map((m, idx) => (
+                                    <div key={idx} className={`whitespace-nowrap px-2 py-0.5 rounded-md text-[10px] font-bold border flex flex-col items-center leading-none justify-center ${dark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-slate-200 text-slate-600 shadow-sm'}`}>
+                                        <span className="opacity-50 text-[8px]">{m.year}</span>
+                                        <span>Rd-{m.round}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
 
-                    {/* Table View */}
+                    {/* Main Table Area */}
                     <div className={`table-viewport no-scrollbar ${dark ? 'bg-slate-950' : 'bg-slate-50'}`}>
                         <div className="zoom-wrapper p-4" style={{ transform: `scale(${zoom})` }}>
                             <svg id="path-svg" width={tableRef.current?.scrollWidth || 0} height={tableRef.current?.scrollHeight || 0}>
@@ -499,8 +623,8 @@
                             <table ref={tableRef}>
                                 <thead>
                                     <tr>
-                                        <th className="sticky-corner sticky-col z-[60] text-slate-400 text-[10px] font-bold">စဉ်</th>
-                                        {organized.years.map(y => <th key={y} className="text-blue-600 font-black">{y}</th>)}
+                                        <th className="sticky-corner sticky-col z-[60] text-slate-400">စဉ်</th>
+                                        {organized.years.map(y => <th key={y} className="text-blue-600">{y}</th>)}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -509,7 +633,7 @@
                                             <td className={`sticky-col ${dark ? 'bg-slate-900' : 'bg-slate-50'}`}>
                                                 <div className="flex flex-col items-center justify-center leading-none h-full w-full">
                                                     <span className="text-sm font-black text-slate-500">{rIdx + 1}</span>
-                                                    <span className="text-[9px] font-bold text-slate-400 mt-0.5">{rIdx % 2 === 0 ? '1' : '16'}</span>
+                                                    <span className="text-[9px] font-bold text-slate-300 mt-0.5">{rIdx % 2 === 0 ? '1' : '16'}</span>
                                                 </div>
                                             </td>
                                             {organized.years.map(y => {
@@ -518,18 +642,19 @@
                                                 const isFocused = selectedId === id;
                                                 const isHighlighted = (activeNum && num === activeNum && num !== "");
                                                 
-                                                let cellBg = styles[id] || (dark ? "#1e293b" : "#ffffff");
-                                                const textColor = (isFocused || isHighlighted) ? '#ffffff' : (styles[id] ? '#ffffff' : 'inherit');
+                                                // Color Logic
+                                                let cellBg = styles[id];
+                                                if (!cellBg) cellBg = dark ? "#1e293b" : "#ffffff";
+                                                
+                                                const textColor = (isFocused || isHighlighted) ? '#ffffff' : getContrastYIQ(cellBg);
                                                 const finalBg = (isFocused || isHighlighted) ? '#3b82f6' : cellBg;
 
                                                 return (
                                                     <td key={y} data-id={id} onClick={() => setSelectedId(id)}>
-                                                        <div className={`cell-box ${isFocused ? 'selected' : ''}`} 
+                                                        <div className={`cell-box ${isFocused ? 'selected' : ''} ${isHighlighted ? 'highlight-pulse' : ''}`} 
                                                              style={{ backgroundColor: finalBg, color: textColor }}>
                                                             <span className="font-bold tracking-tighter">{num || <span className="opacity-0">.</span>}</span>
-                                                            {comments[id] && (
-                                                                <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full box-content border border-white dark:border-slate-800"></div>
-                                                            )}
+                                                            {comments[id] && <div className="comment-dot"></div>}
                                                         </div>
                                                     </td>
                                                 );
@@ -541,53 +666,16 @@
                         </div>
                     </div>
 
-                    {/* Footer */}
-                    <div className="flex-shrink-0 border-t dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 flex justify-between items-center text-[10px] font-bold text-slate-500">
-                        <span>Selected: {selectedId ? selectedId.replace('-', ' / Rd-') : 'None'}</span>
-                        <div className="flex gap-2">
-                             <span>Arkar Soe 3D Calc</span>
-                             <span className="text-blue-600">v3.0 (GitHub)</span>
+                    {/* Footer Info */}
+                    <div className="bg-white dark:bg-slate-900 border-t dark:border-slate-800 text-[10px] px-4 py-2 flex justify-between font-bold flex-shrink-0 text-slate-500">
+                        <div className="flex gap-4">
+                            <span>ရွေးချယ်ထားသည်: <span className="text-blue-600">{selectedId ? `${selectedId.split('-')[0]} (Rd ${Number(selectedId.split('-')[1])+1})` : '-'}</span></span>
                         </div>
+                        <span>ZOOM: {Math.round(zoom * 100)}%</span>
                     </div>
 
-                    {/* Modals */}
-                    {activeModal === 'predict' && (
-                        <Modal title="3D တွက်ချက်မှုခန့်မှန်းချက်များ" onClose={() => setActiveModal(null)} dark={dark}>
-                            <div className="flex flex-col gap-3">
-                                {predictions.map((p, i) => (
-                                    <div key={i} className="prediction-card shadow-lg shadow-blue-500/10">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h4 className="font-bold text-sm opacity-90">{p.title}</h4>
-                                            <i data-lucide="trending-up" className="w-4 h-4 opacity-75"></i>
-                                        </div>
-                                        <div className="flex gap-2 mb-2 overflow-x-auto pb-1">
-                                            {p.nums.length > 0 ? p.nums.map((n, idx) => (
-                                                <span key={idx} className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg text-lg font-black tracking-widest">{n}</span>
-                                            )) : <span className="text-xs opacity-70">ဒေတာမလုံလောက်ပါ</span>}
-                                        </div>
-                                        <p className="text-[10px] opacity-70 border-t border-white/20 pt-1 mt-1">{p.desc}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </Modal>
-                    )}
-
-                    {activeModal === 'about' && (
-                        <Modal title="အကြောင်းအရာ" onClose={() => setActiveModal(null)} dark={dark}>
-                            <div className="text-center flex flex-col items-center gap-4 py-4">
-                                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-xl shadow-blue-500/30 rotate-3">AS</div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400">Arkar Soe</h2>
-                                    <p className="font-bold text-slate-500">3D Master Calculator</p>
-                                </div>
-                                <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl text-xs leading-relaxed text-left w-full">
-                                    <p className="mb-2"><strong>Source:</strong> data.json (GitHub Linked)</p>
-                                    <p>ဤဗားရှင်းသည် data.json ဖိုင်ကို GitHub မှတိုက်ရိုက်လှမ်းချိတ်ထားသဖြင့် ဒေတာအသစ်များကို အလိုအလျောက်ရရှိနိုင်ပါသည်။</p>
-                                </div>
-                            </div>
-                        </Modal>
-                    )}
-
+                    {/* Components */}
+                    {showStats && <StatsModal data={data} dark={dark} onClose={() => setShowStats(false)} />}
                     {toast && <Toast msg={toast} />}
                 </div>
             );
